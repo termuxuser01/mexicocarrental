@@ -1,5 +1,5 @@
 class compCar():
-    def __init__(self, price, name, description, clave, insurance):
+    def __init__(self, price, name, description, clave, insurance=None):
         self.price = price
         self.name = name
         self.description = description

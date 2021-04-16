@@ -1,11 +1,10 @@
 from obj import *
 from selenium import webdriver
-#possible imports
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import WebDriverWait
+
+#remember to update webdriver/remote/webdriver.py&scriptkey and add relative_locator and
+#common/timeouts
 
 def start_driver():
     """Function that starts webdriver and returns it"""
@@ -28,14 +27,13 @@ def get_data(driver, base_url):
     intro = driver.find_element_by_id("intro")
     zelect = intro.find_element_by_class_name("zelect")
     zelect.click()
-    input("Here I am")    
-    cities = zelect.find_element_by_class_name("dropdown").find_elements_by_tag_name("ol")
-    input("is the dropdown still there?")
-    for city in cities[1:]:
-        print(city.text)
+    dropdown = zelect.find_element_by_class_name("dropdown") 
+    cities = dropdown.find_elements_by_tag_name("li")
+    cities.pop(0)
+    for index, city in enumerate(cities):
+        print(index + 1, " - ", city.text)
     
-    input("im about to type")
-    test_city = "CANCUN AEROPUERTO"
+    test_city = cities[int(input("selecciona la ciudad para Hertzmx")) - 1].text
     #target_city = 
     zearch = zelect.find_element_by_class_name("zearch")
     zearch.send_keys(test_city)
@@ -43,10 +41,8 @@ def get_data(driver, base_url):
     zelect.click()
     zelected = zelect.find_element_by_class_name("zelected")
     zelected.click()
-    input("I clicked again")    
     zelect.find_element_by_class_name("current").click()
 
-    input("were the cities done?")
 
     #end find city
 
@@ -65,7 +61,6 @@ def get_data(driver, base_url):
     
     #start find start time
     test_time1 = "16:00"
-    print(test_time1)
     time_element = driver.find_element_by_id("pickup_time")
     time_obj = Select(time_element)
 
@@ -78,15 +73,14 @@ def get_data(driver, base_url):
     time_obj = Select(time_element)
     time_obj.select_by_value(test_time2)
     #end find end time
-    input()
     #submit
     #driver.execute_script("window.scrollTo(0, (document.body.scrollHeight)/3);")
     #wait = WebDriverWait(driver, 10)
     #download_button = wait.until(EC.visibility_of_element_located((By.ID, "enviaron")))
     #download_button.click()
-    input()
     button = driver.find_element_by_id("enviaron").click()
-    input()
+    
+    extract_data(driver)
 
 
 def check_modal(driver):
@@ -104,6 +98,33 @@ def conv_time(time):
     else:
         return time + " AM"
 
+def extract_data(driver):
+    vehicle_list = driver.find_elements_by_class_name("vehicle")
+    
+    vehicles = list()
+
+    for vehicle in vehicle_list:
+        desc = vehicle.find_element_by_class_name("vehicle-header")
+        des1 = desc.find_element_by_class_name("vehicle-type").text
+        des2 = desc.find_element_by_tag_name("strong").text
+        description = str(des1) + " - "  +str(des2)
+        price = vehicle.find_element_by_class_name("price").text
+
+        details = vehicle.find_element_by_class_name("details")
+        name = details.find_element_by_tag_name("h1").text.replace(" o similar", "")
+        
+        
+        features = list()
+        for feature in details.find_elements_by_tag_name("li"):
+            features.append(feature.text)
+        
+        car = compCar(price, name, features, description)
+        vehicles.append(car)
+
+    for vehicle in vehicles:
+        print(vehicle.name, "\n", vehicle.price, "\n", vehicle.description, "\n", vehicle.clave)
+        print("#" * 50)
+        
 def quit_browse(driver):
     driver.quit()
 
