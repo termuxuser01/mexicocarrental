@@ -388,7 +388,7 @@ if __name__ == "__main__":
 
     car.done()
     
-    from xlsw import *
+    from comp.src.xlsw import *
 
     workbook = create_workbook(args.ciudad, args.fi)
     worksheet = create_worksheet(workbook)
