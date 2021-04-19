@@ -1,5 +1,6 @@
 import re
 import time
+import pickle
 import argparse
 from selenium import webdriver
 
@@ -128,7 +129,10 @@ class Car():
                     else:
                         day.click()
         except:
-            cal2 = driver.find_element_by_class_name("table-condensed")
+            try:
+                cal2 = driver.find_element_by_class_name("table-condensed")
+            except:
+                cal2 = driver.find_element_by_class_name("table-condensed")
         #end select start date
         
         #select finish date
@@ -157,7 +161,12 @@ class Car():
             raise ValueError
 
 
-        days_tag = cal2.find_element_by_tag_name("tbody")
+        try:
+            days_tag = cal2.find_element_by_tag_name("tbody")
+        except:
+            driver.find_element_by_id("fhFin").click()
+            days_tag = cal2.find_element_by_tag_name("tbody")
+
         days = days_tag.find_elements_by_class_name("day")
         
         try:
@@ -221,7 +230,6 @@ class Car():
 
         subm.click()
 
-        time.sleep(10)
         
         #end submit form
 
@@ -362,7 +370,16 @@ def date_extract(date):
     
     return year, month, day
 
-
+def dump_data(city, fi, fe, hi, he, v):
+    data = {
+            "city": city,
+            "fi": fi,
+            "fe": fe,
+            "hi": hi,
+            "he": he,
+            "v": v
+            }
+    pickle.dump(data, open("comp/data.p", "wb"))
 if __name__ == "__main__":
     #handle arguments
     parser = argparse.ArgumentParser()
@@ -377,7 +394,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     #end handle arguments
-
+    dump_data(args.ciudad, args.fi, args.fe, args.hi, args.he, args.verbose)
     #handle dates
     syear, smonth, sday = date_extract(args.fi)
     fyear, fmonth, fday = date_extract(args.fe)
@@ -390,9 +407,10 @@ if __name__ == "__main__":
     
     from comp.src.xlsw import *
 
-    workbook = create_workbook(args.ciudad, args.fi)
-    worksheet = create_worksheet(workbook)
+    ws, wb = create_file("mxcr", args.ciudad, args.fi)
 
-    write_to_file(worksheet, prices, names, hours, insurances, descriptions, claves, groups)
+    write_to_file(ws, prices, names, hours, insurances, descriptions, claves, groups)
     
-    workbook.close()
+    wb_close(wb)
+
+    import comp.hrtzmx

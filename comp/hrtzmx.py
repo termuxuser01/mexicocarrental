@@ -1,4 +1,6 @@
-from obj import *
+import pickle
+from comp.obj import *
+from comp.src.xlsw import *
 from selenium import webdriver
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.common.action_chains import ActionChains
@@ -15,7 +17,7 @@ def start_driver():
 
     return driver, base_url
 
-def get_data(driver, base_url):
+def get_data(driver, base_url, fi, fe, hi, he):
     """Function that scrapes data and returns information"""
 
     driver.get(base_url)
@@ -33,10 +35,10 @@ def get_data(driver, base_url):
     for index, city in enumerate(cities):
         print(index + 1, " - ", city.text)
     
-    test_city = cities[int(input("selecciona la ciudad para Hertzmx")) - 1].text
+    city = cities[int(input("selecciona la ciudad para Hertzmx:\n")) - 1].text
     #target_city = 
     zearch = zelect.find_element_by_class_name("zearch")
-    zearch.send_keys(test_city)
+    zearch.send_keys(city)
     zelect = driver.find_element_by_class_name("zelect")
     zelect.click()
     zelected = zelect.find_element_by_class_name("zelected")
@@ -47,31 +49,43 @@ def get_data(driver, base_url):
     #end find city
 
     #find start date
-    test_date1 = "20-04-2021".replace("-", "/")
+    fi = fi.replace("-", "/")
     #target_fi = "DD-MM-YYYY".replace("-", "/")
     driver.find_element_by_id("datepicker").clear()
-    driver.find_element_by_id("datepicker").send_keys(test_date1)
+    driver.find_element_by_id("datepicker").send_keys(fi)
     #end start date
     
     #find end date
-    test_date2 = "21-04-2021".replace("-", "/")
+    fe = fe.replace("-", "/")
     driver.find_element_by_id("datepicker2").clear()
-    driver.find_element_by_id("datepicker2").send_keys(test_date2)
+    driver.find_element_by_id("datepicker2").send_keys(fe)
     #end find end date
     
     #start find start time
-    test_time1 = "16:00"
+    temphi = list(hi)
+    if("3" in temphi):
+        temphi[3] = "0"
+
+    hi = ""
+    hi = hi.join(temphi)
+
     time_element = driver.find_element_by_id("pickup_time")
     time_obj = Select(time_element)
 
-    time_obj.select_by_value(test_time1)
+    time_obj.select_by_value(hi)
     #end find start time
 
     #start find end time
-    test_time2 = "08:00"
+    temphe = list(he)
+
+    if("3" in temphe):
+        temphe[3] = "0"
+
+    he = ""
+    he = he.join(temphe)
     time_element = driver.find_element_by_id("return_time")
     time_obj = Select(time_element)
-    time_obj.select_by_value(test_time2)
+    time_obj.select_by_value(he)
     #end find end time
     #submit
     #driver.execute_script("window.scrollTo(0, (document.body.scrollHeight)/3);")
@@ -80,8 +94,8 @@ def get_data(driver, base_url):
     #download_button.click()
     button = driver.find_element_by_id("enviaron").click()
     
-    extract_data(driver)
-
+    
+    return city, driver
 
 def check_modal(driver):
     try:
@@ -98,7 +112,7 @@ def conv_time(time):
     else:
         return time + " AM"
 
-def extract_data(driver):
+def extract_data(driver, v):
     vehicle_list = driver.find_elements_by_class_name("vehicle")
     
     vehicles = list()
@@ -120,16 +134,40 @@ def extract_data(driver):
         
         car = compCar(price, name, features, description)
         vehicles.append(car)
-
-    for vehicle in vehicles:
-        print(vehicle.name, "\n", vehicle.price, "\n", vehicle.description, "\n", vehicle.clave)
-        print("#" * 50)
         
+    if(v):
+        for vehicle in vehicles:
+            print(vehicle.name, "\n", vehicle.price, "\n", vehicle.description, "\n", vehicle.clave)
+            print("#" * 50)
+        
+        return vehicles
+
 def quit_browse(driver):
     driver.quit()
 
+def load_data():
+    return pickle.load(open("./comp/data.p", "rb"))
+
 driver, base_url = start_driver()
 
-get_data(driver, base_url)
+data = load_data()
+
+fi = data["fi"]
+fe = data["fe"]
+hi = data["hi"]
+he = data["he"]
+v = data["v"]
+
+city, driver = get_data(driver, base_url, fi, fe, hi, he)
+vehicles = extract_data(driver, v)
 
 quit_browse(driver)
+
+prices = [vehicle.price for vehicle in vehicles]
+names = [vehicle.name for vehicle in vehicles]
+descriptions = [vehicle.description for vehicle in vehicles]
+claves = [vehicle.clave for vehicle in vehicles]
+
+ws, wb = create_file("hertz", city, fi)
+write_to_file(ws, prices, names, descriptions=descriptions, claves=claves)
+wb_close(wb)
