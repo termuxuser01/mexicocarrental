@@ -5,8 +5,6 @@ from selenium import webdriver
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.common.action_chains import ActionChains
 
-#remember to update webdriver/remote/webdriver.py&scriptkey and add relative_locator and
-#common/timeouts
 
 def start_driver():
     """Function that starts webdriver and returns it"""
