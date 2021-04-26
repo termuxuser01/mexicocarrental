@@ -1,3 +1,4 @@
+import re
 import time
 from obj import *
 from src.xlsw import *
@@ -58,18 +59,63 @@ def get_data(driver, base_url, city, fi=None, fe=None, hi=None, he=None):
     #end select city
 
     #start select start time
-    fi = "2021-6-22"
+    months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio",
+                "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+
+    fi = "2022-06-02"
     syear, smonth, sday = date_extract(fi)
     driver.find_element_by_id("PickUpDate").click()
-
+    
     cal1 = driver.find_element_by_class_name("calentim-input")
     calendar = cal1.find_element_by_class_name("calentim-calendars")
     current_month = calendar.find_element_by_class_name("calentim-month-switch").text
-    current_year = calendar.find_element_by_class_name("calentim-year-switch").text
+    current_year = int(calendar.find_element_by_class_name("calentim-year-switch").text)
     print(current_month, current_year)
+    
+    current_month_ind = months.index(current_month)
+
+    diff = (smonth - 1) - current_month_ind
+    right_arrow = cal1.find_element_by_class_name("fa-arrow-right")
 
     if(current_year == syear):
         pass
+    else:
+        diff += (syear - current_year) * 12
+
+    if(diff > 0):
+        for i in range(diff):
+            right_arrow = cal1.find_element_by_class_name("fa-arrow-right")
+            right_arrow.click()
+    elif(diff == 0):
+        pass
+    else:
+        raise ValueError
+    
+    cal1 = driver.find_element_by_class_name("calentim-input")
+
+    day_container = cal1.find_element_by_class_name("calentim-days-container")
+    days_webelement = day_container.find_elements_by_class_name("calentim-day")
+
+    for i, day in enumerate(days_webelement):
+        if("calentim-disabled" in day.get_attribute("class").split()):
+            print("removing {}".format(day.text))
+            days_webelement.pop(i)
+ 
+    for i, day in enumerate(days_webelement):
+        if("calentim-disabled" in day.get_attribute("class").split()):
+            print("removing {}".format(day.text))
+            days_webelement.pop(i)
+    
+    for i, day in enumerate(days_webelement):
+        if("calentim-disabled" in day.get_attribute("class").split()):
+            print("removing {}".format(day.text))
+            days_webelement.pop(i)
+    
+    action = ActionChains(driver)
+
+    for day in days_webelement:
+        if(int(day.text) == sday):
+            day.click()
 
     #end select start time
 
@@ -80,7 +126,7 @@ def date_extract(date):
     month = dates.group(2)
     day = dates.group(3)
 
-    return year, month, day
+    return int(year), int(month), int(day)
 
 
 
