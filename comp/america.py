@@ -197,7 +197,7 @@ def get_data(driver, base_url, city, fi=None, fe=None, hi=None, he=None):
     if(diffh < 0):
         diffh *= -1
         for i in range(diffh):
-            up_arrow = WebDriverWait(sclock, 20).until(EC.element_to_be_clickable((By.CLASS_NAME, "fa-arrow-up")))
+            up_arrow = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[10]/div[2]/div[3]/div/div[2]/div[1]/i")))
             up_arrow.location_once_scrolled_into_view
             up_arrow.click()
     else:
