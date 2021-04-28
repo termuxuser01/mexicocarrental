@@ -68,7 +68,7 @@ def get_data(driver, base_url, fi, fe, hi, he):
     hi = hi.join(temphi)
 
     time_element = driver.find_element_by_id("pickup_time")
-    time_obj = Select(time_element)
+    time_obj = Select(hi[:2] + ":00")
 
     time_obj.select_by_value(hi)
     #end find start time
