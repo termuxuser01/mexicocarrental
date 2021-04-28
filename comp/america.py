@@ -1,5 +1,6 @@
 import re
 import time
+import pickle
 from obj import *
 from src.xlsw import *
 from selenium import webdriver
@@ -18,7 +19,7 @@ def start_driver():
 
     return driver, base_url
 
-def get_data(driver, base_url, city, fi=None, fe=None, hi=None, he=None):
+def get_data(driver, base_url, city, fi, fe, hi, he):
     
     driver.get(base_url)
     
@@ -64,7 +65,6 @@ def get_data(driver, base_url, city, fi=None, fe=None, hi=None, he=None):
     months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio",
                 "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
 
-    fi = "2022-06-02"
     syear, smonth, sday = date_extract(fi)
     driver.find_element_by_id("PickUpDate").click()
     
@@ -125,7 +125,6 @@ def get_data(driver, base_url, city, fi=None, fe=None, hi=None, he=None):
     #end select start date
 
     #start select end date
-    fe = "2022-07-02"
     fyear, fmonth, fday = date_extract(fe)
     
     cal2 = driver.find_elements_by_class_name("calentim-input")[1]
@@ -185,10 +184,8 @@ def get_data(driver, base_url, city, fi=None, fe=None, hi=None, he=None):
     #end select end date
 
     #start select start time
-    stime = "8:30"
+    stime = hi
     driver.find_element_by_id("PickUpHour").click()
-    sclock = driver.find_element_by_class_name("calentim-timepicker-start")
-    time.sleep(3)
     
     shour, sminutes = time_extract(stime)
 
@@ -202,10 +199,114 @@ def get_data(driver, base_url, city, fi=None, fe=None, hi=None, he=None):
             up_arrow.click()
     else:
         for i in range(diffh):
-            up_arrow = sclock.find_element_by_class_name("calentim-timepicker-hours-up")
+            down_arrow = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[10]/div[2]/div[3]/div/div[2]/div[2]/i")))
+            down_arrow.location_once_scrolled_into_view
+            down_arrow.click()
+    if(sminutes > 29):
+        sminutes = 60 - sminutes
+        up_arrow = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[10]/div[2]/div[3]/div/div[5]/div[1]/i")))
+        for i in range(sminutes):
             up_arrow.click()
+    else:
+        down_arrow = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[10]/div[2]/div[3]/div/div[5]/div[2]/i")))
+        for i in range(sminutes):
+            down_arrow.click()
 
+    time.sleep(3)
+    #end select start time
+
+    #start select end time
+    ftime = he
+    fhour, fminutes = time_extract(ftime)
+    
+    driver.find_element_by_id("DropOffHour").click()
+
+    diffh = fhour - 11
+
+    if(diffh < 0):
+        diffh *= -1
+        up_arrow = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[11]/div[2]/div[3]/div/div[2]/div[1]/i")))
+        for i in range(diffh):
+            up_arrow.click()
+    else:
+        down_arrow = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[11]/div[2]/div[3]/div/div[2]/div[2]/i")))
+        down_arrow.click()
+
+    if(fminutes > 29):
+        fminutes = 60 - fminutes
+        up_arrow = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[11]/div[2]/div[3]/div/div[5]/div[1]/i")))
+        for i in range(fminutes):
+            up_arrow.click()
+    else:
+        down_arrow = WebDriverWait(driver, 20).until(EC.element_to_be_clickable((By.XPATH, "/html/body/div[11]/div[2]/div[3]/div/div[5]/div[2]/i")))
+        for i in range(fminutes):
+            down_arrow.click()
     #end select end time
+
+    #start submit button click
+    driver.find_element_by_id("PickUpHour").click()
+    driver.find_element_by_id("bookingbox-button").click()
+    #end submit button click
+    
+    time.sleep(3)
+
+    return driver
+
+def extract_data(driver, v):
+    vehicles_list = driver.find_elements_by_class_name("article-car")
+    
+    vehicles = list()
+
+    del vehicles_list[-1]
+
+    for vehicle in vehicles_list:
+        temp_str = vehicle.find_element_by_class_name("h3").text.replace(" o similar", "")
+
+        pattern = re.compile(r"((\S+\s)+)(\w{4})")
+        
+        match_name = pattern.match(temp_str)
+
+        try:
+            name = match_name.group(1)
+            clave = match_name.groip(3)
+        
+        except:
+            print(vehicle.get_attribute("innerHTML"))
+
+        description_container = vehicle.find_element_by_class_name("article-car-icon")
+
+        description_items = description_container.find_elements_by_tag_name("li")
+        
+        description = description_string(description_items)
+        
+        price = vehicle.find_element_by_class_name("price").text
+
+        car = compCar(price, name, description, clave)
+
+    if(v):
+        for vehicle in vehicles:
+            print(vehicle.name, "\n", vehicle.price, "\n", vehicle.description, "\n", vehicle.clave)
+            print("#" * 50)
+
+    return vehicles
+
+
+def description_string(items):
+    description = list()
+    passengers = items[0].text
+    shift = items[-1].text
+    equipaje = items[1].text
+
+    description.append(f"-{passengers} pasajeros")
+    description.append(f"-{equipaje} de equipaje")
+    
+    if(shift == "M"):
+        description.append("-Manejo estandar")
+    else:
+        description.append("-Manejo automatico")
+
+    return description
+
 
 def date_extract(date):
     date_pattern = re.compile(r'(\d{4})-(\d{1,2})-(\d{1,2})')
@@ -220,9 +321,36 @@ def time_extract(time):
     pattern = re.compile(r"(\d{1,2}):(\d{2})")
     match = pattern.match(time)
 
-    return int(match.group(1)), (match.group(2))
+    return int(match.group(1)), int(match.group(2))
 
+def load_data():
+    return pickle.load(open("./comp/data.p", "rb"))
+
+def quit_browse(driver):
+    driver.quit()
 
 driver, base_url = start_driver()
-city = "aaaa"
-get_data(driver, base_url, city)
+
+data = load_data()
+
+fi = data["fi"]
+fe = data["fe"]
+hi = data["hi"]
+he = data["he"]
+city = data["city"]
+v = data["v"]
+
+driver = get_data(driver, base_url, city, fi, fe, hi, he)
+
+vehicles = extract_data(driver,  v)
+
+quit_browse(driver)
+
+prices = [vehicle.price for vehicle in vehicles]
+names = [vehicle.name for vehicle in vehicles]
+descriptions = [vehicle.description for vehicle in vehicles]
+claves = [vehicle.clave for vehicle in vehicles]
+
+ws, wb = create_file("america-car-rental", city, fi)
+write_to_file(ws, prices, names, descriptions=descriptions, claves=claves)
+wb_close(wb)
