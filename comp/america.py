@@ -261,27 +261,32 @@ def extract_data(driver, v):
 
     for vehicle in vehicles_list:
         temp_str = vehicle.find_element_by_class_name("h3").text.replace(" o similar", "")
-
-        pattern = re.compile(r"((\S+\s)+)(\w{4})")
+        pattern = re.compile(r"(.+)([A-Z]{4})")
         
         match_name = pattern.match(temp_str)
 
-        try:
+        if(match_name):
             name = match_name.group(1)
-            clave = match_name.groip(3)
+            clave = match_name.group(2)
+            ind = "ok"
         
-        except:
-            print(vehicle.get_attribute("innerHTML"))
-
         description_container = vehicle.find_element_by_class_name("article-car-icon")
 
         description_items = description_container.find_elements_by_tag_name("li")
         
         description = description_string(description_items)
         
-        price = vehicle.find_element_by_class_name("price").text
 
-        car = compCar(price, name, description, clave)
+        if(vehicle.find_element_by_class_name("btn-car").text == "No Disponible"):
+            price = "No disponible"
+        else:
+            price = vehicle.find_element_by_class_name("price").text
+        
+        if(ind == "ok"):
+            car = compCar(price, name, description, clave)
+            vehicles.append(car)
+        else:
+            pass
 
     if(v):
         for vehicle in vehicles:
@@ -341,8 +346,7 @@ city = data["city"]
 v = data["v"]
 
 driver = get_data(driver, base_url, city, fi, fe, hi, he)
-
-vehicles = extract_data(driver,  v)
+vehicles = extract_data(driver,  True)
 
 quit_browse(driver)
 
