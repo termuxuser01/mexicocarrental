@@ -138,7 +138,7 @@ def extract_data(driver, v):
             print(vehicle.name, "\n", vehicle.price, "\n", vehicle.description, "\n", vehicle.clave)
             print("#" * 50)
         
-        return vehicles
+    return vehicles
 
 def quit_browse(driver):
     driver.quit()
