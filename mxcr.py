@@ -414,3 +414,4 @@ if __name__ == "__main__":
     wb_close(wb)
 
     import comp.hrtzmx
+    import comp.america
