@@ -29,7 +29,7 @@ def get_data(driver, base_url):
         result = driver.find_element(By.CLASS_NAME, "custom-menu-search").text
     
     city_dropdown = driver.find_element(By.CLASS_NAME, "custom-menu-search")
-    cities = city_dropdown.find_elements_by_tag_name("li")
+    cities = city_dropdown.find_elements(By.TAG_NAME, "li")
     
     for i, city in enumerate(cities):
         if(city.text.startswith("OFICINAS")):
@@ -104,7 +104,7 @@ def get_data(driver, base_url):
         else:
             right_arrow.click()
     
-    days = target_month.find_elements_by_class_name("ui-state-default")
+    days = target_month.find_elements(By.CLASS_NAME, "ui-state-default")
 
     for day in days:
         try:
@@ -135,7 +135,7 @@ def get_data(driver, base_url):
         temp_time.append(him)
         temp_time.append(" PM")
         stime = "".join(temp_time)
-        times = driver.find_elements_by_class_name("ui-timepicker-pm")
+        times = driver.find_elements(By.CLASS_NAME, "ui-timepicker-pm")
         for t in times:
             if(t.text == stime):
                 t.click()
@@ -143,7 +143,7 @@ def get_data(driver, base_url):
         hi += " AM"
         if(len(str(hih)) < 2):
             hi = "0" + hi
-        times = driver.find_elements_by_class_name("ui-timepicker-am")
+        times = driver.find_elements(By.CLASS_NAME, "ui-timepicker-am")
         for t in times:
             if(t.text == hi):
                 t.click()
@@ -211,7 +211,7 @@ def get_data(driver, base_url):
         else:
             right_arrow.click()
     
-    days = target_month.find_elements_by_class_name("ui-state-default")
+    days = target_month.find_elements(By.CLASS_NAME, "ui-state-default")
 
     for day in days:
         try:
@@ -241,7 +241,7 @@ def get_data(driver, base_url):
         temp_time.append(hem)
         temp_time.append(" PM")
         ftime = "".join(temp_time)
-        times = driver.find_elements_by_class_name("ui-timepicker-pm")
+        times = driver.find_elements(By.CLASS_NAME, "ui-timepicker-pm")
         for t in times:
             if(t.text == ftime):
                 t.click()
@@ -249,7 +249,7 @@ def get_data(driver, base_url):
         he += " AM"
         if(len(str(heh)) < 2):
             he = "0" + hi
-        times = driver.find_elements_by_class_name("ui-timepicker-am")
+        times = driver.find_elements(By.CLASS_NAME, "ui-timepicker-am")
         for t in times:
             if(t.text == he):
                 t.click()
@@ -258,6 +258,107 @@ def get_data(driver, base_url):
     #end select end time
     driver.find_element(By.CLASS_NAME, "bottonYellow").click()
 
+    time.sleep(1)
+
+    
+    return driver, city
+
+def data_extract(driver):
+    vehicles = driver.find_elements(By.CLASS_NAME, "autoLista")
+    
+    ids = list()
+    selectors = list()
+    
+    for vehicle in vehicles:
+        divid = vehicle.get_attribute("id")
+        pattern_no = re.compile(r"DivCarList_(\d+)")
+        divno = pattern_no.match(divid).group(1)
+        sel_tit = "#FrmCarList_{}".format(divno)
+        css_selector = "{}"
+        selectors.append(sel_tit)
+        ids.append(divid)
+
+    for sel_tit, idno in  zip(selectors, ids):
+        vehicle = driver.find_element(By.ID, idno)
+
+        name = vehicle.find_element(By.CLASS_NAME, "h2").text
+
+        lists = vehicle.find_elements(By.TAG_NAME, "ul")
+
+        descriptions = list()
+        insurances = list()
+
+        desc_i = lists[0].find_elements(By.TAG_NAME, "li")
+        ins_i = lists[1].find_elements(By.TAG_NAME, "li")
+
+        kilo_selector = "{} > div:nth-child(2) > div:nth-child(1) > ul:nth-child(2) > li:nth-child(1) > span:nth-child(1) > span:nth-child(1)".format(sel_tit)
+        kilo = driver.find_element(By.CSS_SELECTOR, kilo_selector).text
+        print("Kilometraje" + kilo)
+
+        
+        price_selector = "{} > div:nth-child(2) > div:nth-child(2) > a:nth-child(1) > div:nth-child(1) > p:nth-child(1)".format(sel_tit)
+        price_box = driver.find_element(By.CSS_SELECTOR, price_selector)
+        price_text = cleanhtml(price_box.get_attribute("innerHTML"))
+        if(price_text != "No disponible"):
+            vehicle.find_element(By.CLASS_NAME, "bottonVerde").click()
+            time.sleep(1)
+            price = extract_price(driver)
+            driver.back()
+            clear_page(driver)
+        else:
+            price = price_text
+
+        print(name)
+        print(price)
+
+        time.sleep(1)
+
+def extract_price(driver):
+    driver.find_element(By.CLASS_NAME, "paquete_2").click()
+    time.sleep(1)
+    price = driver.find_element(By.ID, "extrasPrecio")
+
+    return price.text
+
+def clear_page(driver):
+    #clean screen
+    try:
+        driver.find_element(By.CLASS_NAME, "btn-close-premium").click()
+    except:
+        pass
+    try:
+        driver.find_element(By.CSS_SELECTOR, ".modal-dialogFix > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > a:nth-child(1)").click()
+    except:
+        pass
+
+    time.sleep(1)
+    elements = driver.find_elements(By.CLASS_NAME, "modal-backdrop")
+
+    for element in elements:
+        driver.execute_script("""
+        var element = arguments[0];
+        element.parentNode.removeChild(element);
+        """, element)
+    
+    try:
+        driver.find_elements(By.ID, "closeprivilege")[1].click()
+    except:
+        pass
+
+    try:
+        driver.find_element(By.CSS_SELECTOR, ".modal-dialogFix > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > a:nth-child(1)").click()
+    except:
+        pass
+    
+    return driver
+    #end clean screen
+
+
+
+def cleanhtml(html):
+  clean_pattern = re.compile('<.*?>')
+  cleantext = re.sub(clean_pattern, '', html)
+  return cleantext
 
 def date_extract(date):
     pattern = re.compile(r"(\d{4})-(\d{1,2})-(\d{1,2})")
@@ -276,6 +377,7 @@ def quit_browse(driver):
 
 
 driver, base_url = start_driver()
-get_data(driver, base_url)
-
+driver, city = get_data(driver, base_url)
+driver = clear_page(driver)
+data_extract(driver)
 quit_browse(driver)
