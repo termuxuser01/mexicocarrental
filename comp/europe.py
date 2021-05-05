@@ -289,11 +289,24 @@ def data_extract(driver):
         insurances = list()
 
         desc_i = lists[0].find_elements(By.TAG_NAME, "li")
-        ins_i = lists[1].find_elements(By.TAG_NAME, "li")
 
         kilo_selector = "{} > div:nth-child(2) > div:nth-child(1) > ul:nth-child(2) > li:nth-child(1) > span:nth-child(1) > span:nth-child(1)".format(sel_tit)
         kilo = driver.find_element(By.CSS_SELECTOR, kilo_selector).text
-        print("Kilometraje" + kilo)
+        descriptions.append("Kilometraje: " + kilo)
+
+        descs = [desc.text for desc in desc_i]
+
+
+        descriptions.append("Passajeros: " + descs[2])
+        descriptions.append(descs[3])
+        descriptions.append("Equipaje: " + descs[4])
+        descriptions.append("Puertas: " + descs[6])
+        descriptions.append(descs[7])
+
+        for i in range(6):
+            sel = "{} > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > div:nth-child(2) > ul:nth-child(1) > li:nth-child({})".format(sel_tit, i + 1)
+            txt = driver.find_element(By.CSS_SELECTOR, sel).text
+            insurances.append(txt)
 
         
         price_selector = "{} > div:nth-child(2) > div:nth-child(2) > a:nth-child(1) > div:nth-child(1) > p:nth-child(1)".format(sel_tit)
@@ -310,11 +323,23 @@ def data_extract(driver):
 
         print(name)
         print(price)
+        print(descriptions)
+        print(insurances)
+        print("#" * 50)
 
         time.sleep(1)
 
 def extract_price(driver):
-    driver.find_element(By.CLASS_NAME, "paquete_2").click()
+    try:
+        driver.find_element(By.CSS_SELECTOR, "#waiverSinglePaquete_2 > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > button:nth-child(1)").click()
+    except:
+        pass
+    try:
+        driver.find_element(By.CSS_SELECTOR, "a.paquete_2:nth-child(5)").click()
+    except:
+        time.sleep(1)
+        driver.find_element(By.CSS_SELECTOR, "a.paquete_2:nth-child(5)").click()
+
     time.sleep(1)
     price = driver.find_element(By.ID, "extrasPrecio")
 
