@@ -1,8 +1,8 @@
 import re
 import time
 import pickle
-from obj import *
-from src.xlsw import *
+from comp.obj import *
+from comp.src.xlsw import *
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys

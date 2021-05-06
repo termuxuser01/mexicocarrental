@@ -1,5 +1,8 @@
 import re
 import time
+import pickle
+from comp.obj import *
+from comp.src.xlsw import *
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 
@@ -9,11 +12,10 @@ def start_driver():
 
     return driver, base_url
 
-def get_data(driver, base_url):
+def get_data(driver, base_url, city, fi, fe, hi, he):
     driver.get(base_url)
 
     #start select city
-    city = "cancun"
     search_bar = driver.find_element(By.ID, "idcheckoutLocationName")
     search_bar.send_keys(city)
     time.sleep(2)
@@ -46,10 +48,8 @@ def get_data(driver, base_url):
 
     #start select start date
 
-    fi = "2021-06-10"
-    smonth = 5
-    syear = 2022
-    sday = 11
+    syear, smonth, sday = date_extract(fi)
+
     driver.find_element(By.ID, "idcheckoutDay").click()
 
     cal1 = driver.find_element(By.ID, "ui-datepicker-div")
@@ -118,7 +118,6 @@ def get_data(driver, base_url):
     
     #start select start time
     driver.find_element(By.ID, "checkoutHourMinDisplay0").click()
-    hi = "10:15"
 
     time_pattern = re.compile(r"(\d{1,2}):(\d{2})")
     time_match = time_pattern.match(hi)
@@ -153,7 +152,6 @@ def get_data(driver, base_url):
 
     #start select end date
 
-    fe = "2022-06-12"
     fyear, fmonth, fday = date_extract(fe)
 
     driver.find_element(By.ID, "idcheckinDay").click()
@@ -225,7 +223,6 @@ def get_data(driver, base_url):
     
     #start select end time
     driver.find_element(By.ID, "checkinHourMinDisplay0").click()
-    he = "17:45"
 
     time_match2 = time_pattern.match(he)
     heh = int(time_match2.group(1))
@@ -263,11 +260,12 @@ def get_data(driver, base_url):
     
     return driver, city
 
-def data_extract(driver):
+def data_extract(driver, v):
     vehicles = driver.find_elements(By.CLASS_NAME, "autoLista")
     
     ids = list()
     selectors = list()
+    cars = list()
     
     for vehicle in vehicles:
         divid = vehicle.get_attribute("id")
@@ -321,14 +319,21 @@ def data_extract(driver):
         else:
             price = price_text
 
-        print(name)
-        print(price)
-        print(descriptions)
-        print(insurances)
-        print("#" * 50)
+        if(v):
+            print(name)
+            print(price)
+            print(descriptions)
+            print(insurances)
+            print("#" * 50)
 
         time.sleep(1)
+        
+        car = compCar(price, name, descriptions, insurance=insurances)
 
+        cars.append(car)
+
+    return cars
+    
 def extract_price(driver):
     try:
         driver.find_element(By.CSS_SELECTOR, "#waiverSinglePaquete_2 > div:nth-child(1) > div:nth-child(1) > div:nth-child(1) > button:nth-child(1)").click()
@@ -399,10 +404,32 @@ def date_extract(date):
 def quit_browse(driver):
     driver.quit()
 
+def load_data():
+    return pickle.load(open("./comp/data.p", "rb"))
+
+driver, base_url = start_driver()
+
+data = load_data()
+
+city = data["city"]
+fi = data["fi"]
+fe = data["fe"]
+hi = data["hi"]
+he = data["he"]
+v = data["v"]
 
 
 driver, base_url = start_driver()
-driver, city = get_data(driver, base_url)
+driver, city = get_data(driver, base_url, city, fi, fe, hi, he)
 driver = clear_page(driver)
-data_extract(driver)
+cars = data_extract(driver, v)
 quit_browse(driver)
+
+prices = [car.price for car in cars]
+names = [car.name for car in cars]
+descriptions = [car.description for car in cars]
+insurances = [car.insurance for car in cars]
+
+ws, wb = create_file("europecarrental", city, fi)
+write_to_file(ws, prices, names, descriptions=descriptions, insurances=insurances)
+wb_close(wb)

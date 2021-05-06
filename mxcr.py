@@ -415,3 +415,4 @@ if __name__ == "__main__":
 
     import comp.hrtzmx
     import comp.america
+    import comp.europe

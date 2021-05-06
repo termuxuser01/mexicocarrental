@@ -2,6 +2,7 @@ import pickle
 from comp.obj import *
 from comp.src.xlsw import *
 from selenium import webdriver
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.select import Select
 from selenium.webdriver.common.action_chains import ActionChains
 
@@ -66,9 +67,10 @@ def get_data(driver, base_url, fi, fe, hi, he):
 
     hi = ""
     hi = hi.join(temphi)
+    hi = hi[:2] + ":00"
 
-    time_element = driver.find_element_by_id("pickup_time")
-    time_obj = Select(hi[:2] + ":00")
+    time_element = driver.find_element(By.ID, "pickup_time")
+    time_obj = Select(time_element)
 
     time_obj.select_by_value(hi)
     #end find start time
